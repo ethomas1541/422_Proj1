@@ -1,5 +1,5 @@
 import tkinter as tk
-import db as mongo
+import db
 
 #Make the window
 window = tk.Tk()
@@ -30,11 +30,13 @@ def open_notepad(user):
     textbox = tk.Text(notepad_window, width=40, height=30)
     textbox.pack()  #adds box to window
 
-# Returns the text thats in the textbox to console probably unnecessary
-def get_text():
-    text = textbox.get("1.0", "end-1c")
-    print("Text entered:")
-    print(text)
+    # Returns the text thats in the textbox to console probably unnecessary
+    def get_text():
+        text = textbox.get("1.0", "end-1c")
+        print("Text entered:")
+        db.save(text)
+        print(text)
+        db.load()
 
     #Creates and adds button that calls get_text
     button = tk.Button(notepad_window, text="Get Text", command=get_text)
