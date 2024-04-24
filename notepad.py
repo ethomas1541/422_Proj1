@@ -34,9 +34,9 @@ def open_notepad(user):
     def get_text():
         text = textbox.get("1.0", "end-1c")
         print("Text entered:")
-        db.save(text)
+        db.save("placeholder_name", text)
         print(text)
-        db.load()
+        db.load("placeholder_name")
 
     #Creates and adds button that calls get_text
     button = tk.Button(notepad_window, text="Get Text", command=get_text)
