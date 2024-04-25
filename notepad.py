@@ -21,10 +21,17 @@ def select_user():
         open_notepad(selected_user)
 
 
-text_box_count = 0
+text_box_count = 1
 #Opens the notepad
 def open_notepad(user):
     window.destroy()
+
+    # SAVE BUTTON
+    def get_text():
+        #CODE FOR SAVING
+        #text = textbox.get("1.0", "end-1c")
+        print("Text entered:")
+        #print(text)
 
     def add_text_boxes():
         global text_box_count
@@ -33,8 +40,8 @@ def open_notepad(user):
         notesfont = ("Arial", 12)
         TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont)
         TextBoxWithDefaultText(notepad_frame, "Notes...", notesfont, height=5)
-        canvas.update_idletasks()  # Update the canvas to reflect the new widgets
-        canvas.config(scrollregion=canvas.bbox("all"))  # Update the scroll region
+        canvas.update_idletasks()  # Update the canvas to reflect the two new note pads
+        canvas.config(scrollregion=canvas.bbox("all"))  # Rescales the region you can scroll in
 
     class TextBoxWithDefaultText:
         def __init__(self, master, default_text, font, width=65, height=2):
@@ -54,9 +61,14 @@ def open_notepad(user):
                 self.textbox.insert("1.0", self.default_text)
 
     notepad_window = tk.Tk()
+    notepad_window.title(f"{user} Notes") #Names the notepad
+
 
     scrollbar = tk.Scrollbar(notepad_window, orient=tk.VERTICAL)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    button = tk.Button(notepad_window, text="Get Text", command=get_text)
+    button.pack()
 
     canvas = tk.Canvas(notepad_window, yscrollcommand=scrollbar.set)
     canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -66,6 +78,9 @@ def open_notepad(user):
     canvas.create_window((0, 0), window=notepad_frame, anchor="nw")
     canvas.config(yscrollcommand=scrollbar.set, scrollregion=canvas.bbox("all"))
     scrollbar.config(command=canvas.yview)
+
+    chapterfont = ("Arial", 18)
+    TextBoxWithDefaultText(notepad_frame, "Chapter...", chapterfont)
 
     add_button = tk.Button(notepad_window, text="Add Text Boxes", command=add_text_boxes)
     add_button.pack()
