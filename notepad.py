@@ -1,5 +1,5 @@
 import tkinter as tk
-import db
+
 
 #Make the window
 window = tk.Tk()
@@ -7,6 +7,8 @@ window.title("User Selection")
 
 # List of users
 users = ["User 1", "User 2", "User 3" ]
+
+
 
 #User selection
 def select_user():
@@ -18,29 +20,55 @@ def select_user():
         print("Selected User:", selected_user)
         open_notepad(selected_user)
 
+
+text_box_count = 0
 #Opens the notepad
 def open_notepad(user):
     window.destroy()
 
-    # Makes a Tkinter window
+    def add_text_boxes():
+        global text_box_count
+        text_box_count += 1
+        headingfont = ("Arial", 15)
+        notesfont = ("Arial", 12)
+        TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont)
+        TextBoxWithDefaultText(notepad_frame, "Notes...", notesfont, height=5)
+        canvas.update_idletasks()  # Update the canvas to reflect the new widgets
+        canvas.config(scrollregion=canvas.bbox("all"))  # Update the scroll region
+
+    class TextBoxWithDefaultText:
+        def __init__(self, master, default_text, font, width=65, height=2):
+            self.default_text = default_text
+            self.textbox = tk.Text(master, width=width, height=height, font= font)
+            self.textbox.insert("1.0", self.default_text)
+            self.textbox.bind("<FocusIn>", self.remove_default_text)
+            self.textbox.bind("<FocusOut>", self.restore_default_text)
+            self.textbox.pack(fill=tk.BOTH, expand=True)
+        
+        def remove_default_text(self, event):
+            if self.textbox.get("1.0", "end-1c") == self.default_text:
+                self.textbox.delete("1.0", tk.END)
+        
+        def restore_default_text(self, event):
+            if not self.textbox.get("1.0", "end-1c"):
+                self.textbox.insert("1.0", self.default_text)
+
     notepad_window = tk.Tk()
-    notepad_window.title(f"{user} Notes") #Names the notepad
 
-    # Creates the textbox and puts it in the window
-    textbox = tk.Text(notepad_window, width=40, height=30)
-    textbox.pack()  #adds box to window
+    scrollbar = tk.Scrollbar(notepad_window, orient=tk.VERTICAL)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    # Returns the text thats in the textbox to console probably unnecessary
-    def get_text():
-        text = textbox.get("1.0", "end-1c")
-        print("Text entered:")
-        db.save("placeholder_name", text)
-        print(text)
-        db.load("placeholder_name")
+    canvas = tk.Canvas(notepad_window, yscrollcommand=scrollbar.set)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    #Creates and adds button that calls get_text
-    button = tk.Button(notepad_window, text="Get Text", command=get_text)
-    button.pack()
+    notepad_frame = tk.Frame(canvas)
+
+    canvas.create_window((0, 0), window=notepad_frame, anchor="nw")
+    canvas.config(yscrollcommand=scrollbar.set, scrollregion=canvas.bbox("all"))
+    scrollbar.config(command=canvas.yview)
+
+    add_button = tk.Button(notepad_window, text="Add Text Boxes", command=add_text_boxes)
+    add_button.pack()
 
     #Runs the program
     notepad_window.mainloop()
