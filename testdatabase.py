@@ -47,14 +47,12 @@ def check_or_create_user_table(connection, username):
             print(f"Failed to create table '{table_name}': {err}")
     cursor.close()
 
-def main(port, user, password, database, ara_username):
+def main():
     host = 'ix.cs.uoregon.edu'
-    """
     port = 3854
     user = 'dtweedale'
     password = 'password'
     database = input("Enter a name for the database:")
-    """
 
     # Connect to MySQL Server (without specific database)
     connection = connect_to_mysql(host, port, user, password)
@@ -66,12 +64,14 @@ def main(port, user, password, database, ara_username):
     # Connect to the specific database
     db_connection = connect_to_database(host, port, user, password, database)
     if db_connection:
+        # Ask user for their username
+        username = input("Enter your username: ")
         # Check if user table exists or create new one
-        check_or_create_user_table(db_connection, ara_username)
+        check_or_create_user_table(db_connection, username)
 
         # Close the database connection
         db_connection.close()
         print("Connection closed.")
 
 if __name__ == "__main__":
-    main()
+    select_user()

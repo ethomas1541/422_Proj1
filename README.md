@@ -39,6 +39,21 @@ You will need to create a user that can access your MySQL instance remotely. To 
 
 You now have your username, password, and port number. To check the status of your MySQL instance, enter `mysqlctl status`.
 
+### Configuring the ARA
+
+#### MySQL.Connector
+
+You will need to install the `mysql.connector` package to run this program. To do so, make sure you have `pip` or `pip3` installed, depending on your python version. To install `mysql.connector`, run the command:
+```
+pip install mysql-connector-python
+```
+_Exchange pip for pip3 if needed_
+
+#### Admin Setup
+
+To configure the database, first select to the _admin_ user. This user has a `Server Setup` option, where the user can configure the server connection properties: `host, port, username, and password`. These settings are what we created in the previous step.
+
+
 
 
 
