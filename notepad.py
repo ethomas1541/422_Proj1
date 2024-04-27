@@ -1,4 +1,5 @@
 import tkinter as tk
+from prompts import *
 
 user_select_window = None
 note_select_window = None
@@ -9,6 +10,7 @@ def select_user():
     global user_select_window
     user_select_window = tk.Tk()
     user_select_window.title("User Selection")
+    user_select_window.geometry("150x200")
 
     # List of users
     users = ["User 1", "User 2", "User 3" ]
@@ -39,6 +41,7 @@ def select_note(user):
         global note_select_window
         user_select_window.destroy()
         note_select_window = tk.Tk()
+        note_select_window.geometry("150x200")
         note_select_window.title(f"Select Note for {user}")
 
         note_listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
@@ -83,10 +86,20 @@ def open_notepad(user, note):
         canvas.update_idletasks()  # Update the canvas to reflect the two new note pads
         canvas.config(scrollregion=canvas.bbox("all"))  # Rescales the region you can scroll in
 
+    def add_bullet():
+        global text_box_count
+        text_box_count += 1
+        headingfont = ("Arial", 15)
+        notesfont = ("Arial", 12)
+        TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont)
+        TextBoxWithDefaultText(notepad_frame, "Bulleted List", notesfont, height=5)
+        canvas.update_idletasks()
+        canvas.config(scrollregion=canvas.bbox("all"))
+
     class TextBoxWithDefaultText:
-        def __init__(self, master, default_text, font, width=65, height=2):
+        def __init__(self, master, default_text, font, width=29, height=1):
             self.default_text = default_text
-            self.textbox = tk.Text(master, width=width, height=height, font= font)
+            self.textbox = tk.Text(master, width=width, height=height, font= font, wrap="word")
             self.textbox.insert("1.0", self.default_text)
             self.textbox.bind("<FocusIn>", self.remove_default_text)
             self.textbox.bind("<FocusOut>", self.restore_default_text)
@@ -107,7 +120,8 @@ def open_notepad(user, note):
     scrollbar = tk.Scrollbar(notepad_window, orient=tk.VERTICAL)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    button = tk.Button(notepad_window, text="Get Text", command=get_text)
+    # Use this to submit text into the database
+    button = tk.Button(notepad_window, text="Save Note", command=get_text)
     button.pack()
 
     canvas = tk.Canvas(notepad_window, yscrollcommand=scrollbar.set)
@@ -120,10 +134,16 @@ def open_notepad(user, note):
     scrollbar.config(command=canvas.yview)
 
     chapterfont = ("Arial", 18)
-    TextBoxWithDefaultText(notepad_frame, "Chapter...", chapterfont)
+    TextBoxWithDefaultText(notepad_frame, "Note Name", chapterfont)
 
     add_button = tk.Button(notepad_window, text="Add Text Boxes", command=add_text_boxes)
-    add_button.pack()
+    add_button.pack(pady=5)
+
+    bullet_button = tk.Button(notepad_window, text="Add Bulleted Points", command=add_bullet)
+    bullet_button.pack(pady=5)
+
+    prompt_box = tk.Label(notepad_window, text=get_prompt(), width=20, wraplength=140, bg="yellow", borderwidth=3, relief="sunken")
+    prompt_box.pack(pady=5)
 
     #Runs the program
     notepad_window.mainloop()
