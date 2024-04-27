@@ -3,6 +3,8 @@ from prompts import *
 
 user_select_window = None
 note_select_window = None
+prompt_box = None
+prompts_enabled = True
 
 #User selection
 def select_user():
@@ -96,6 +98,17 @@ def open_notepad(user, note):
         canvas.update_idletasks()
         canvas.config(scrollregion=canvas.bbox("all"))
 
+    def toggle_prompts():
+        global prompts_enabled, prompt_box
+        prompts_enabled = not prompts_enabled
+        if prompts_enabled:
+            prompt_box.pack(pady=5)
+        else:
+            prompt_box.pack_forget()
+
+    def cycle_prompts():
+        prompt_box.config()
+
     class TextBoxWithDefaultText:
         def __init__(self, master, default_text, font, width=29, height=1):
             self.default_text = default_text
@@ -142,10 +155,15 @@ def open_notepad(user, note):
     bullet_button = tk.Button(notepad_window, text="Add Bulleted Points", command=add_bullet)
     bullet_button.pack(pady=5)
 
+    toggle_prompts_button = tk.Button(notepad_window, text="Toggle Prompts", command=toggle_prompts)
+    toggle_prompts_button.pack(pady=5)
+
+    global prompt_box
     prompt_box = tk.Label(notepad_window, text=get_prompt(), width=20, wraplength=140, bg="yellow", borderwidth=3, relief="sunken")
     prompt_box.pack(pady=5)
 
     #Runs the program
+    
     notepad_window.mainloop()
 
 if __name__ == "__main__":
