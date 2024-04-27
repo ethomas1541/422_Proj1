@@ -1,131 +1,101 @@
+# note_gui.py
 import tkinter as tk
+from tkinter import messagebox
+from testdatabase import ensure_database_exists, ensure_table_exists, connect_to_database, fetch_users, fetch_notes, save_or_update_note
 
-user_select_window = None
-note_select_window = None
+# Database credentials
+HOST = 'ix.cs.uoregon.edu'
+USER = 'dtweedale'
+PASSWORD = 'password'
+DATABASE = 'Notes'
+PORT = 3854
 
-#User selection
+connection = ensure_database_exists(HOST, USER, PASSWORD, DATABASE, PORT)
+
 def select_user():
-    #Make the window
     global user_select_window
     user_select_window = tk.Tk()
     user_select_window.title("User Selection")
 
-    # List of users
-    users = ["User 1", "User 2", "User 3" ]
+    users = fetch_users(connection)
 
-    #Makes a listbox so you can choose the user
     listbox = tk.Listbox(user_select_window, selectmode=tk.SINGLE)
     for user in users:
         listbox.insert(tk.END, user)
     listbox.pack()
 
-    selected_user = None
     def get_selection():
-        selected_user = listbox.curselection()
-        if selected_user:
-            selected_user_string = listbox.get(selected_user[0])
-            print("Selected User:", selected_user_string)
-            select_note(selected_user_string)
+        selection_index = listbox.curselection()
+        if selection_index:
+            selected_user = listbox.get(selection_index[0])
+            user_select_window.destroy()
+            select_note(selected_user)
 
-    #Button for selecting user and switching to notepad
     button = tk.Button(user_select_window, text="Select User", command=get_selection)
     button.pack()
-
-    #Runs the user selection program
     user_select_window.mainloop()
 
 def select_note(user):
-    if user:
-        global note_select_window
-        user_select_window.destroy()
-        note_select_window = tk.Tk()
-        note_select_window.title(f"Select Note for {user}")
+    ensure_table_exists(connection, user)
+    note_select_window = tk.Tk()
+    note_select_window.title(f"Select Note for {user}")
 
-        note_listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
-        note_listbox.insert(tk.END, "Sample Note")
-        note_listbox.insert(tk.END, "New Note")
-        note_listbox.pack()
+    notes = fetch_notes(connection, user)
+    listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
+    for note in notes:
+        listbox.insert(tk.END, note)
+    listbox.insert(tk.END, "Create New Note")
+    listbox.pack()
 
-        selected_note = None
-        def get_selection():
-            selected_note = note_listbox.curselection()
-            if selected_note:
-                selected_note_string = note_listbox.get(selected_note[0])
-                print("Selected Note", selected_note_string)
-                open_notepad(user, selected_note_string)
+    def get_selection():
+        selection_index = listbox.curselection()
+        if selection_index:
+            selected_note = listbox.get(selection_index[0])
+            if selected_note == "Create New Note":
+                selected_note = ""  # Create a new note entry
+            note_select_window.destroy()
+            open_notepad(user, selected_note)
 
-        button = tk.Button(note_select_window, text="Select Note", command=get_selection)
-        
-        button.pack()
-    else:
-        print(user)
+    button = tk.Button(note_select_window, text="Select Note", command=get_selection)
+    button.pack()
+    note_select_window.mainloop()
 
-text_box_count = 1
-#Opens the notepad
-def open_notepad(user, note):
-    global note_select_window
-    note_select_window.destroy()
-
-    # SAVE BUTTON
-    def get_text():
-        #CODE FOR SAVING
-        #text = textbox.get("1.0", "end-1c")
-        print("Text entered:")
-        #print(text)
-
-    def add_text_boxes():
-        global text_box_count
-        text_box_count += 1
-        headingfont = ("Arial", 15)
-        notesfont = ("Arial", 12)
-        TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont)
-        TextBoxWithDefaultText(notepad_frame, "Notes...", notesfont, height=5)
-        canvas.update_idletasks()  # Update the canvas to reflect the two new note pads
-        canvas.config(scrollregion=canvas.bbox("all"))  # Rescales the region you can scroll in
-
-    class TextBoxWithDefaultText:
-        def __init__(self, master, default_text, font, width=65, height=2):
-            self.default_text = default_text
-            self.textbox = tk.Text(master, width=width, height=height, font= font)
-            self.textbox.insert("1.0", self.default_text)
-            self.textbox.bind("<FocusIn>", self.remove_default_text)
-            self.textbox.bind("<FocusOut>", self.restore_default_text)
-            self.textbox.pack(fill=tk.BOTH, expand=True)
-        
-        def remove_default_text(self, event):
-            if self.textbox.get("1.0", "end-1c") == self.default_text:
-                self.textbox.delete("1.0", tk.END)
-        
-        def restore_default_text(self, event):
-            if not self.textbox.get("1.0", "end-1c"):
-                self.textbox.insert("1.0", self.default_text)
-
+def open_notepad(user, note_name):
     notepad_window = tk.Tk()
-    notepad_window.title(f"{user}: {note}") #Names the notepad
+    notepad_window.title(f"{user}: {note_name}")
 
+    subject_label = tk.Label(notepad_window, text="Subject:")
+    subject_label.pack()
+    subject_entry = tk.Entry(notepad_window)
+    subject_entry.pack()
 
-    scrollbar = tk.Scrollbar(notepad_window, orient=tk.VERTICAL)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    text_box = tk.Text(notepad_window, width=80, height=20)
+    text_box.pack(padx=10, pady=10)
 
-    button = tk.Button(notepad_window, text="Get Text", command=get_text)
+    # Load existing note
+    if note_name:
+        notes = fetch_notes(connection, user)
+        if note_name in notes:
+            cursor = connection.cursor()
+            cursor.execute(f"SELECT note, subject FROM {user} WHERE note_name = %s", (note_name,))
+            note_text, note_subject = cursor.fetchone()
+            if note_text:
+                text_box.insert(tk.END, note_text)
+            if note_subject:
+                subject_entry.insert(tk.END, note_subject)
+            cursor.close()
+
+    def save_note():
+        text = text_box.get("1.0", tk.END)
+        subject = subject_entry.get()  # Get subject from entry field
+        save_or_update_note(connection, user, note_name, subject, text)
+        messagebox.showinfo("Save", "Your note has been saved successfully!")
+        notepad_window.destroy()
+        select_note(user)
+
+    button = tk.Button(notepad_window, text="Save Note", command=save_note)
     button.pack()
 
-    canvas = tk.Canvas(notepad_window, yscrollcommand=scrollbar.set)
-    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-    notepad_frame = tk.Frame(canvas)
-
-    canvas.create_window((0, 0), window=notepad_frame, anchor="nw")
-    canvas.config(yscrollcommand=scrollbar.set, scrollregion=canvas.bbox("all"))
-    scrollbar.config(command=canvas.yview)
-
-    chapterfont = ("Arial", 18)
-    TextBoxWithDefaultText(notepad_frame, "Chapter...", chapterfont)
-
-    add_button = tk.Button(notepad_window, text="Add Text Boxes", command=add_text_boxes)
-    add_button.pack()
-
-    #Runs the program
     notepad_window.mainloop()
 
 if __name__ == "__main__":
