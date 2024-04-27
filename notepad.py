@@ -1,30 +1,70 @@
 import tkinter as tk
 
-
-#Make the window
-window = tk.Tk()
-window.title("User Selection")
-
-# List of users
-users = ["User 1", "User 2", "User 3" ]
-
-
+user_select_window = None
+note_select_window = None
 
 #User selection
 def select_user():
-    global selected_user #stores the selected user
-    selected_users = listbox.curselection() 
-    if selected_users:
-        selected_user_index = selected_users[0]
-        selected_user = listbox.get(selected_user_index)
-        print("Selected User:", selected_user)
-        open_notepad(selected_user)
+    #Make the window
+    global user_select_window
+    user_select_window = tk.Tk()
+    user_select_window.title("User Selection")
 
+    # List of users
+    users = ["User 1", "User 2", "User 3" ]
+
+    #Makes a listbox so you can choose the user
+    listbox = tk.Listbox(user_select_window, selectmode=tk.SINGLE)
+    for user in users:
+        listbox.insert(tk.END, user)
+    listbox.pack()
+
+    selected_user = None
+    def get_selection():
+        selected_user = listbox.curselection()
+        if selected_user:
+            selected_user_string = listbox.get(selected_user[0])
+            print("Selected User:", selected_user_string)
+            select_note(selected_user_string)
+
+    #Button for selecting user and switching to notepad
+    button = tk.Button(user_select_window, text="Select User", command=get_selection)
+    button.pack()
+
+    #Runs the user selection program
+    user_select_window.mainloop()
+
+def select_note(user):
+    if user:
+        global note_select_window
+        user_select_window.destroy()
+        note_select_window = tk.Tk()
+        note_select_window.title(f"Select Note for {user}")
+
+        note_listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
+        note_listbox.insert(tk.END, "Sample Note")
+        note_listbox.insert(tk.END, "New Note")
+        note_listbox.pack()
+
+        selected_note = None
+        def get_selection():
+            selected_note = note_listbox.curselection()
+            if selected_note:
+                selected_note_string = note_listbox.get(selected_note[0])
+                print("Selected Note", selected_note_string)
+                open_notepad(user, selected_note_string)
+
+        button = tk.Button(note_select_window, text="Select Note", command=get_selection)
+        
+        button.pack()
+    else:
+        print(user)
 
 text_box_count = 1
 #Opens the notepad
-def open_notepad(user):
-    window.destroy()
+def open_notepad(user, note):
+    global note_select_window
+    note_select_window.destroy()
 
     # SAVE BUTTON
     def get_text():
@@ -61,7 +101,7 @@ def open_notepad(user):
                 self.textbox.insert("1.0", self.default_text)
 
     notepad_window = tk.Tk()
-    notepad_window.title(f"{user} Notes") #Names the notepad
+    notepad_window.title(f"{user}: {note}") #Names the notepad
 
 
     scrollbar = tk.Scrollbar(notepad_window, orient=tk.VERTICAL)
@@ -88,16 +128,5 @@ def open_notepad(user):
     #Runs the program
     notepad_window.mainloop()
 
-
-#Makes a listbox so you can choose the user
-listbox = tk.Listbox(window, selectmode=tk.SINGLE)
-for user in users:
-    listbox.insert(tk.END, user)
-listbox.pack()
-
-#Button for selecting user and switching to notepad
-button = tk.Button(window, text="Select User", command=select_user)
-button.pack()
-
-#Runs the user selection program
-window.mainloop()
+if __name__ == "__main__":
+    select_user()
