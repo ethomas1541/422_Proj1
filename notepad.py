@@ -80,7 +80,7 @@ def open_notepad(user, note):
         #CODE FOR SAVING
         #text = textbox.get("1.0", "end-1c")
         print("Text entered:")
-        #print(text)
+        print(text)
 
     def add_text_boxes(box_type):
         mode = "NOTES"
