@@ -6,6 +6,8 @@ note_select_window = None
 prompt_box = None
 prompts_enabled = True
 
+notes = []
+
 #User selection
 def select_user():
     #Make the window
@@ -47,6 +49,8 @@ def select_note(user):
         note_select_window.title(f"Select Note for {user}")
 
         note_listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
+        # Redo these next couple lines, make sure these note names are loaded in from the database
+        # These hard-coded ones need to be replaced with actual content
         note_listbox.insert(tk.END, "Sample Note")
         note_listbox.insert(tk.END, "New Note")
         note_listbox.pack()
@@ -78,25 +82,18 @@ def open_notepad(user, note):
         print("Text entered:")
         #print(text)
 
-    def add_text_boxes():
+    def add_text_boxes(box_type):
+        mode = "NOTES"
+        if box_type[0] == "B":
+            mode = "BULLET_LIST"
         global text_box_count
         text_box_count += 1
         headingfont = ("Arial", 15)
         notesfont = ("Arial", 12)
-        TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont)
-        TextBoxWithDefaultText(notepad_frame, "Notes...", notesfont, height=5)
+        TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont, mode="HEADING")
+        TextBoxWithDefaultText(notepad_frame, box_type, notesfont, height=5, mode=mode)
         canvas.update_idletasks()  # Update the canvas to reflect the two new note pads
         canvas.config(scrollregion=canvas.bbox("all"))  # Rescales the region you can scroll in
-
-    def add_bullet():
-        global text_box_count
-        text_box_count += 1
-        headingfont = ("Arial", 15)
-        notesfont = ("Arial", 12)
-        TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont)
-        TextBoxWithDefaultText(notepad_frame, "Bulleted List", notesfont, height=5)
-        canvas.update_idletasks()
-        canvas.config(scrollregion=canvas.bbox("all"))
 
     def toggle_prompts():
         global prompts_enabled, prompt_box
@@ -107,16 +104,21 @@ def open_notepad(user, note):
             prompt_box.pack_forget()
 
     def cycle_prompts():
-        prompt_box.config()
+        global prompt_box   
+        prompt_box.config(text=get_prompt())
+        prompt_box.after(10000, cycle_prompts)
 
     class TextBoxWithDefaultText:
-        def __init__(self, master, default_text, font, width=29, height=1):
+        def __init__(self, master, default_text, font, width=29, height=1, mode="TITLE"):
+            global notes
             self.default_text = default_text
             self.textbox = tk.Text(master, width=width, height=height, font= font, wrap="word")
             self.textbox.insert("1.0", self.default_text)
             self.textbox.bind("<FocusIn>", self.remove_default_text)
             self.textbox.bind("<FocusOut>", self.restore_default_text)
             self.textbox.pack(fill=tk.BOTH, expand=True)
+            notes.append({mode: self.textbox})
+            print(notes)
         
         def remove_default_text(self, event):
             if self.textbox.get("1.0", "end-1c") == self.default_text:
@@ -149,14 +151,14 @@ def open_notepad(user, note):
     chapterfont = ("Arial", 18)
     TextBoxWithDefaultText(notepad_frame, "Note Name", chapterfont)
 
-    add_button = tk.Button(notepad_window, text="Add Text Boxes", command=add_text_boxes)
+    add_button = tk.Button(notepad_window, text="Add Text Boxes", command=lambda:add_text_boxes("Notes..."))
     add_button.pack(pady=5)
 
-    bullet_button = tk.Button(notepad_window, text="Add Bulleted Points", command=add_bullet)
+    bullet_button = tk.Button(notepad_window, text="Add Bulleted Points", command=lambda:add_text_boxes("Bulleted List..."))
     bullet_button.pack(pady=5)
 
     toggle_prompts_button = tk.Button(notepad_window, text="Toggle Prompts", command=toggle_prompts)
-    toggle_prompts_button.pack(pady=5)
+    toggle_prompts_button.pack(pady=20)
 
     global prompt_box
     prompt_box = tk.Label(notepad_window, text=get_prompt(), width=20, wraplength=140, bg="yellow", borderwidth=3, relief="sunken")
@@ -164,6 +166,7 @@ def open_notepad(user, note):
 
     #Runs the program
     
+    cycle_prompts()
     notepad_window.mainloop()
 
 if __name__ == "__main__":
