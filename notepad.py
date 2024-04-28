@@ -23,7 +23,7 @@ class TextBoxWithDefaultText:
         if is_on_notepad:
             global note_boxes
             note_boxes.append(self)
-            print(note_boxes)
+            # print(note_boxes)
         else:
             global admin_input_boxes
             admin_input_boxes.append(self.textbox)
