@@ -177,7 +177,9 @@ def select_note(user):
             cursor = connection.cursor()
             try:
                 cursor.execute(f"SELECT note_name FROM {table_name}")
-                return cursor.fetchall()
+                result = cursor.fetchall()
+                note_names = [note_name[0] for note_name in result] if result else []
+                return note_names
             except testdatabase.Error as err:
                 print(f"Error fetching notes: {err}")
                 return []
@@ -200,18 +202,36 @@ def select_note(user):
         note_listbox.insert(tk.END, "Create a new note")
         note_listbox.pack()
         
+        def fetch_note_details(connection, username, note_name):
+            table_name = f"{username}_notes"
+            cursor = connection.cursor()
+            try:
+                cursor.execute(f"""
+                    SELECT headers, notes, bullets FROM {table_name} WHERE note_name = %s
+                """, (note_name,))
+                result = cursor.fetchone()
+                if result:
+                    return list(result) # Convert the tuple to a list and return it
+                else:
+                    print(f"No note found with the name '{note_name}'.")
+                    return []
+            except testdatabase.Error as err:
+                print(f"Failed to fetch note data: {err}")
+                return []
+            finally:
+                cursor.close()
+        
         selected_note = None
         def get_selection():
+            connection = testdatabase.connect_to_database(host, port, username, password, database)
             selected_note = note_listbox.curselection()
             if selected_note:
                 selected_note_string = note_listbox.get(selected_note[0])
                 print("Selected Note", selected_note_string)
                 connection = testdatabase.connect_to_database(host, 3854, username, password, database)
-                if connection:
-                    print("We are connected!")
-                else:
-                    print(":(")
-                open_notepad(user, selected_note_string, connection)
+                dictionaries = fetch_note_details(connection, user, selected_note_string)
+                print(dictionaries)
+                open_notepad(user, selected_note_string, connection, dictionaries)
 
         button = tk.Button(note_select_window, text="Select Note", command=get_selection)
         button.pack()
@@ -228,7 +248,7 @@ def select_note(user):
 
 text_box_count = 1
 #Opens the notepad
-def open_notepad(user, note, connection):
+def open_notepad(user, note, connection, dicts):
     global note_select_window, note_name
     note_select_window.destroy()
     # SAVE BUTTON
