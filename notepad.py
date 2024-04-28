@@ -8,13 +8,13 @@ prompt_box = None
 prompts_enabled = True
 
 note_boxes = []
-notes = []
 admin_input_boxes = []
 admin_inputs = []
 
 class TextBoxWithDefaultText:
     def __init__(self, master, default_text, font, width=29, height=1, mode="TITLE", is_on_notepad=False):
         self.default_text = default_text
+        self.mode=mode
         self.textbox = tk.Text(master, width=width, height=height, font= font, wrap="word")
         self.textbox.insert("1.0", self.default_text)
         self.textbox.bind("<FocusIn>", self.remove_default_text)
@@ -22,12 +22,12 @@ class TextBoxWithDefaultText:
         self.textbox.pack(fill=tk.BOTH, expand=True)
         if is_on_notepad:
             global note_boxes
-            note_boxes.append(self.textbox)
-            print(note_boxes)
+            note_boxes.append(self)
+            # print(note_boxes)
         else:
             global admin_input_boxes
             admin_input_boxes.append(self.textbox)
-            print(admin_inputs)
+            # print(admin_inputs)
     
     def remove_default_text(self, event):
         if self.textbox.get("1.0", "end-1c") == self.default_text:
@@ -140,10 +140,40 @@ def open_notepad(user, note):
 
     # SAVE BUTTON
     def get_text():
-        #CODE FOR SAVING
-        #text = textbox.get("1.0", "end-1c")
-        print("Text entered:")
-        #print(text)
+        headers = {}
+        notes = {}
+        bullets = {}
+        cur_header = 0
+        # Sort all note boxes except the title into dictionaries
+        # These will represent couplings between titles and subordinate note/bullet fields
+        for i in range(1, len(note_boxes)):
+            ith_box = note_boxes[i]
+            ith_box_text = ith_box.textbox.get("1.0", "end-1c")
+            cur_header_str = str(cur_header)
+            # Send these to the header dictionary
+            if ith_box.mode == "HEADING":
+                headers[cur_header_str] = ith_box_text
+            # In both cases below, we know a note field or a bullet field must be immediately followed
+            # by a header field. So increment cur_header by 1.
+
+            # Send these to notes dict
+            elif ith_box.mode == "NOTES":
+                notes[cur_header_str] = ith_box_text
+                cur_header += 1
+
+            # Send these to bullets dict
+            else:
+                bullets[cur_header_str] = ith_box_text
+                cur_header += 1
+
+        ret_strings = [
+            str(headers),
+            str(notes),
+            str(bullets)
+        ]
+
+        for x in ret_strings:
+            print(x)
 
     def add_text_boxes(box_type):
         mode = "NOTES"
