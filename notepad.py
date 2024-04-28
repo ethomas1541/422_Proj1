@@ -23,11 +23,11 @@ class TextBoxWithDefaultText:
         if is_on_notepad:
             global note_boxes
             note_boxes.append(self)
-            # print(note_boxes)
+            print(note_boxes)
         else:
             global admin_input_boxes
             admin_input_boxes.append(self.textbox)
-            # print(admin_inputs)
+            print(admin_inputs)
     
     def remove_default_text(self, event):
         if self.textbox.get("1.0", "end-1c") == self.default_text:
