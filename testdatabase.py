@@ -39,7 +39,8 @@ def check_or_create_user_table(connection, username):
                     note_name VARCHAR(255) NOT NULL,
                     headers TEXT,
                     notes TEXT,
-                    bullets TEXT
+                    bullets TEXT,
+                    UNIQUE(note_name)
                 )
             """)
             print(f"Table '{table_name}' created successfully.")
@@ -50,14 +51,14 @@ def check_or_create_user_table(connection, username):
 def insert_note_data(connection, username, note_name, headers, notes, bullets):
     table_name = f"{username}_notes"
     cursor = connection.cursor()
-    print(note_name)
-    print(headers)
-    print(notes)
-    print(bullets)
     try:
         cursor.execute(f"""
             INSERT INTO {table_name} (note_name, headers, notes, bullets)
             VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+            headers = VALUES(headers),
+            notes = VALUES(notes),
+            bullets = VALUES(bullets)
         """, (note_name, str(headers), str(notes), str(bullets)))
         connection.commit()
         print("Note data inserted successfully.")

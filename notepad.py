@@ -174,13 +174,9 @@ def select_note(user):
         exist_notes = fetch_notes(connection, user)
         for note in exist_notes:
             note_listbox.insert(tk.END, note)
-        note_listbox.pack()
         
-        # Function to update the listbox with notes
-        def update_note_listbox(listbox, notes):
-            listbox.delete(0, tk.END)
-            for note in notes:
-                listbox.insert(tk.END, note[0])
+        note_listbox.insert(tk.END, "Create a new note")
+        note_listbox.pack()
         
         selected_note = None
         def get_selection():
@@ -247,9 +243,7 @@ def open_notepad(user, note, connection):
                 bullets[cur_header_str] = ith_box_text
                 cur_header += 1
 
-        print('Before insert note!')
         testdatabase.insert_note_data(connection, user, note_name, str(headers), str(notes), str(bullets))
-        print('Outside of insert note')
     def add_text_boxes(box_type):
         mode = "NOTES"
         if box_type[0] == "B":
