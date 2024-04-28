@@ -1,15 +1,24 @@
 import tkinter as tk
 from prompts import *
 import testdatabase
+from tkinter import simpledialog
+
 
 user_select_window = None
 note_select_window = None
 prompt_box = None
 prompts_enabled = True
+port=3854
+host='ix.cs.uoregon.edu'
+username='dtweedale'
+password='password'
+database='theREALREALREALdatabase'
 
 note_boxes = []
 admin_input_boxes = []
 admin_inputs = []
+note_name = None
+exist_notes = None
 
 class TextBoxWithDefaultText:
     def __init__(self, master, default_text, font, width=29, height=1, mode="TITLE", is_on_notepad=False):
@@ -23,7 +32,6 @@ class TextBoxWithDefaultText:
         if is_on_notepad:
             global note_boxes
             note_boxes.append(self)
-            # print(note_boxes)
         else:
             global admin_input_boxes
             admin_input_boxes.append(self.textbox)
@@ -43,10 +51,39 @@ def select_user():
     global user_select_window
     user_select_window = tk.Tk()
     user_select_window.title("User Selection")
-    user_select_window.geometry("150x200")
+    user_select_window.geometry("200x250")
 
-    # List of users
-    users = ["Admin 1", "User 2", "User 3"]
+    def fetch_users():
+        users = []
+        try:
+            # Connect to the database
+            connection = testdatabase.connect_to_database(host, port, username, password, database)
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("SHOW TABLES")
+                # Fetch table names (users)
+                tables = cursor.fetchall()
+                users = [table[0].split('_')[0] for table in tables]  # Extract usernames from table names
+                connection.close()
+        except testdatabase.Error as err:
+            print(f"Error fetching users: {err}")
+        return users
+
+    def create_new_user(user_name):
+        try:
+            # Connect to the specific database
+            connection = testdatabase.connect_to_database(host, port, username, password, database)
+            if connection:
+                # Check if user table exists or create new one
+                testdatabase.check_or_create_user_table(connection, user_name)
+                connection.close()
+                print("New user created successfully.")
+                return True
+        except testdatabase.Error as err:
+            print(f"Error creating new user: {err}")
+        return False
+    
+    users = fetch_users()
 
     #Makes a listbox so you can choose the user
     listbox = tk.Listbox(user_select_window, selectmode=tk.SINGLE)
@@ -65,6 +102,18 @@ def select_user():
     #Button for selecting user and switching to notepad
     button = tk.Button(user_select_window, text="Select User", command=get_selection)
     button.pack()
+
+        # Button for creating a new user
+    def create_new_user_handler():
+        user_name = tk.simpledialog.askstring("Create New User", "Enter new user name:")
+        if user_name:
+            success = create_new_user(user_name)
+            if success:
+                listbox.insert(tk.END, user_name)
+
+    
+    create_user_button = tk.Button(user_select_window, text="Create New User", command=create_new_user_handler)
+    create_user_button.pack()
 
     #Runs the user selection program
     user_select_window.mainloop()
@@ -98,7 +147,22 @@ def setup_server(user):
 
 def select_note(user):
     if user:
-        global note_select_window
+        global note_select_window, exist_notes
+
+        # Function to fetch notes from the database
+        def fetch_notes(connection, user):
+            table_name = f"{user}_notes"
+            cursor = connection.cursor()
+            try:
+                cursor.execute(f"SELECT note_name FROM {table_name}")
+                return cursor.fetchall()
+            except testdatabase.Error as err:
+                print(f"Error fetching notes: {err}")
+                return []
+            finally:
+                cursor.close()
+
+        connection = testdatabase.connect_to_database(host, port, username, password, database)
         user_select_window.destroy()
         note_select_window = tk.Tk()
         note_select_window.geometry("150x220")
@@ -107,17 +171,29 @@ def select_note(user):
         note_listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
         # Redo these next couple lines, make sure these note names are loaded in from the database
         # These hard-coded ones need to be replaced with actual content
-        note_listbox.insert(tk.END, "Sample Note")
-        note_listbox.insert(tk.END, "New Note")
+        exist_notes = fetch_notes(connection, user)
+        for note in exist_notes:
+            note_listbox.insert(tk.END, note)
         note_listbox.pack()
-
+        
+        # Function to update the listbox with notes
+        def update_note_listbox(listbox, notes):
+            listbox.delete(0, tk.END)
+            for note in notes:
+                listbox.insert(tk.END, note[0])
+        
         selected_note = None
         def get_selection():
             selected_note = note_listbox.curselection()
             if selected_note:
                 selected_note_string = note_listbox.get(selected_note[0])
                 print("Selected Note", selected_note_string)
-                open_notepad(user, selected_note_string)
+                connection = testdatabase.connect_to_database(host, 3854, username, password, database)
+                if connection:
+                    print("We are connected!")
+                else:
+                    print(":(")
+                open_notepad(user, selected_note_string, connection)
 
         button = tk.Button(note_select_window, text="Select Note", command=get_selection)
         button.pack()
@@ -125,7 +201,7 @@ def select_note(user):
         # Very stupid little check to see if the user is an admin
         # The predefined usernames we have only provide one admin account, and the user can't change the usernames
         # So it works - for now
-        if user[0] == "A":
+        if user == "Admin":
             button = tk.Button(note_select_window, text="Server Setup", command=lambda:setup_server(user))
             button.pack()
 
@@ -134,15 +210,20 @@ def select_note(user):
 
 text_box_count = 1
 #Opens the notepad
-def open_notepad(user, note):
-    global note_select_window
+def open_notepad(user, note, connection):
+    global note_select_window, note_name
     note_select_window.destroy()
-
     # SAVE BUTTON
+    def get_note_name_text():
+        if note_name:
+            return note_name.textbox.get("1.0", "end-1c")
+        else:
+            return None
     def get_text():
         headers = {}
         notes = {}
         bullets = {}
+        note_name = get_note_name_text()
         cur_header = 0
         # Sort all note boxes except the title into dictionaries
         # These will represent couplings between titles and subordinate note/bullet fields
@@ -166,15 +247,9 @@ def open_notepad(user, note):
                 bullets[cur_header_str] = ith_box_text
                 cur_header += 1
 
-        ret_strings = [
-            str(headers),
-            str(notes),
-            str(bullets)
-        ]
-
-        for x in ret_strings:
-            print(x)
-
+        print('Before insert note!')
+        testdatabase.insert_note_data(connection, user, note_name, str(headers), str(notes), str(bullets))
+        print('Outside of insert note')
     def add_text_boxes(box_type):
         mode = "NOTES"
         if box_type[0] == "B":
@@ -222,7 +297,7 @@ def open_notepad(user, note):
     scrollbar.config(command=canvas.yview)
 
     chapterfont = ("Arial", 18)
-    TextBoxWithDefaultText(notepad_frame, "Note Name", chapterfont, is_on_notepad=True)
+    note_name = TextBoxWithDefaultText(notepad_frame, "Note Name", chapterfont, is_on_notepad=True)
 
     add_button = tk.Button(notepad_window, text="Add Text Boxes", command=lambda:add_text_boxes("Notes..."))
     add_button.pack(pady=5)
