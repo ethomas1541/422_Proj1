@@ -2,17 +2,19 @@ import tkinter as tk
 from prompts import *
 import testdatabase
 from tkinter import simpledialog
-
+import config_handler
+from os.path import isfile, abspath
 
 user_select_window = None
 note_select_window = None
+server_setup_window = None
 prompt_box = None
 prompts_enabled = True
-port=3854
 host='ix.cs.uoregon.edu'
-username='dtweedale'
-password='password'
-database='theREALREALREALdatabase'
+port=None
+username=None
+password=None
+database=None
 
 note_boxes = []
 admin_input_boxes = []
@@ -47,6 +49,8 @@ class TextBoxWithDefaultText:
 
 #User selection
 def select_user():
+    if(server_setup_window):
+        server_setup_window.destroy()
     #Make the window
     global user_select_window
     user_select_window = tk.Tk()
@@ -119,10 +123,16 @@ def select_user():
     user_select_window.mainloop()
 
 def setup_server(user):
-    note_select_window.destroy()
+    initial_setup = not bool(note_select_window)
+    title_string = "Configure mysql Server"
+    if not initial_setup:
+        note_select_window.destroy()
+    else:
+        title_string = "Connect to mysql Server"
+    global server_setup_window
     server_setup_window = tk.Tk()
     server_setup_window.geometry("300x140")
-    server_setup_window.title("mysql Server Setup")
+    server_setup_window.title(title_string)
     fields = ["Port Number", "Username", "Password", "New Database Name"]
     host_label = tk.Label(server_setup_window, text="Hostname: ix.cs.uoregon.edu", font=("Courier", 12))
     host_label.pack()
@@ -134,16 +144,28 @@ def setup_server(user):
         admin_inputs=[]
         for x in admin_input_boxes:
             admin_inputs.append(x.get("1.0", "end-1c"))
-        print("db main")
         for i in range(0, 4):
-            print(admin_inputs[i], fields[i])
             if admin_inputs[i] == fields[i]:
+                print("All fields are required")
                 return
-        print("db main 2")
+        config_handler.write_config({
+            "Port": admin_inputs[0],
+            "Username": admin_inputs[1],
+            "Password": admin_inputs[2],
+            "Database Name": admin_inputs[3]
+        })
         testdatabase.main(admin_inputs[0], admin_inputs[1], admin_inputs[2], admin_inputs[3], str.replace(user, " ", "_"))
+        global port, username, password, database
+        port = admin_inputs[0]
+        username = admin_inputs[1]
+        password = admin_inputs[2]
+        database = admin_inputs[3]
+        if initial_setup:
+            select_user()
 
     button = tk.Button(server_setup_window, text="Submit", command=db_main)
     button.pack()
+    server_setup_window.mainloop()
 
 def select_note(user):
     if user:
@@ -312,4 +334,19 @@ def open_notepad(user, note, connection):
     notepad_window.mainloop()
 
 if __name__ == "__main__":
-    select_user()
+    print(abspath("config.txt"))
+    if(isfile(abspath("config.txt"))):
+        config_lines = config_handler.read_config()
+        port = config_lines[0]
+        username = config_lines[1]
+        password = config_lines[2]
+        database = config_lines[3]
+        select_user()
+    else:
+        setup_server("Admin")
+
+#TODO
+# populate notes loaded from database w/ data from database
+# ability to hide fields
+# "back" buttons
+# bullets
