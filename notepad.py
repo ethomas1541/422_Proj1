@@ -395,7 +395,7 @@ def select_note(user):
         except:
             pass
         note_select_window = tk.Tk()
-        note_select_window.geometry("150x220")
+        note_select_window.geometry("250x250")
         note_select_window.title(f"Select Note for {user}")
 
         back_button = tk.Button(note_select_window, text="<<", command=select_user)

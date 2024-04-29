@@ -1,5 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
+import samplepdf
+
 
 error_flag = False
 
@@ -94,6 +96,9 @@ def main(port, user, password, database, ara_username):
     if db_connection:
         # Check if user table exists or create new one
         check_or_create_user_table(db_connection, ara_username)
+        if ara_username == "Admin":
+            # Load in the sample chapter notes
+            insert_note_data(db_connection, ara_username, samplepdf.note_name, samplepdf.headers, samplepdf.notes, samplepdf.bullets.replace("\n","\\n"))
 
         # Close the database connection
         db_connection.close()
