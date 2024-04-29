@@ -11,6 +11,9 @@ server_setup_window = None
 notepad_window = None
 prompt_box = None
 prompts_enabled = True
+canvas = None
+hide_button_frame = None
+hide_button_count = 0
 host='ix.cs.uoregon.edu'
 port=None
 username=None
@@ -31,6 +34,12 @@ class TextBoxWithDefaultText:
         self.textbox.insert("1.0", self.default_text)
         self.textbox.bind("<FocusIn>", self.remove_default_text)
         self.textbox.bind("<FocusOut>", self.restore_default_text)
+
+        if is_on_notepad:
+            self.hidden = False
+            self.hide_button = tk.Button(hide_button_frame, text="👁", command=self.toggle_hidden, pady=30)
+            self.hide_button.pack(side=tk.TOP)
+
         if self.mode == "BULLET_LIST":
             self.textbox.bind("<Key>", self.add_bullets)
         self.textbox.pack(fill=tk.BOTH, expand=True)
@@ -41,7 +50,14 @@ class TextBoxWithDefaultText:
             global admin_input_boxes
             admin_input_boxes.append(self.textbox)
             print(admin_inputs)
-    
+
+    def toggle_hidden(self):
+        self.hidden = not self.hidden
+        if self.hidden:
+            self.textbox.config(fg="#fff")
+        else:
+            self.textbox.config(fg="#000")
+
     def remove_default_text(self, event):
         if self.textbox.get("1.0", "end-1c") == self.default_text:
             self.textbox.delete("1.0", tk.END)
@@ -392,6 +408,10 @@ def open_notepad(user, note, connection, dicts):
     canvas.create_window((0, 0), window=notepad_frame, anchor="nw")
     canvas.config(yscrollcommand=scrollbar.set, scrollregion=canvas.bbox("all"))
     scrollbar.config(command=canvas.yview)
+
+    global hide_button_frame
+    hide_button_frame = tk.Frame(notepad_frame)
+    hide_button_frame.pack(side=tk.LEFT, anchor="ne")
 
     chapterfont = ("Arial", 18)
     note_name = TextBoxWithDefaultText(notepad_frame, "Note Name", chapterfont, is_on_notepad=True)
