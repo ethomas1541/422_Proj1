@@ -1,6 +1,8 @@
 import mysql.connector
 from mysql.connector import Error
 
+error_flag = False
+
 def create_database_if_not_exists(connection, database_name):
     cursor = connection.cursor()
     cursor.execute(f"SHOW DATABASES LIKE '{database_name}'")
@@ -18,6 +20,8 @@ def connect_to_mysql(host, port, user, password):
         return mysql.connector.connect(host=host, port=port, user=user, password=password)
     except Error as err:
         print(f"Error connecting to MySQL Server: {err}")
+        global error_flag
+        error_flag = True
         return None
 
 def connect_to_database(host, port, user, password, database):
@@ -25,6 +29,8 @@ def connect_to_database(host, port, user, password, database):
         return mysql.connector.connect(host=host, port=port, user=user, password=password, database=database)
     except Error as err:
         print(f"Error connecting to MySQL database: {err}")
+        global error_flag
+        error_flag = True
         return None
 
 def check_or_create_user_table(connection, username):

@@ -8,6 +8,7 @@ from os.path import isfile, abspath
 user_select_window = None
 note_select_window = None
 server_setup_window = None
+notepad_window = None
 prompt_box = None
 prompts_enabled = True
 host='ix.cs.uoregon.edu'
@@ -49,13 +50,19 @@ class TextBoxWithDefaultText:
 
 #User selection
 def select_user():
-    if(server_setup_window):
+    try:
         server_setup_window.destroy()
+    except:
+        pass
+    try:
+        note_select_window.destroy()
+    except:
+        pass
     #Make the window
     global user_select_window
     user_select_window = tk.Tk()
     user_select_window.title("User Selection")
-    user_select_window.geometry("200x250")
+    user_select_window.geometry("200x300")
 
     def fetch_users():
         users = []
@@ -88,6 +95,9 @@ def select_user():
         return False
     
     users = fetch_users()
+
+    if note_storage.error_flag:
+        tk.Label(bg="red", wraplength=200, width=30, height=3, text="Database connection error; please check the console and restart the application").pack()
 
     #Makes a listbox so you can choose the user
     listbox = tk.Listbox(user_select_window, selectmode=tk.SINGLE)
@@ -123,15 +133,22 @@ def select_user():
     user_select_window.mainloop()
 
 def setup_server(user):
+    global admin_input_boxes
+    admin_input_boxes = []
     initial_setup = not bool(note_select_window)
     title_string = "Configure mysql Server"
-    if not initial_setup:
-        note_select_window.destroy()
-    else:
-        title_string = "Connect to mysql Server"
     global server_setup_window
     server_setup_window = tk.Tk()
     server_setup_window.geometry("300x140")
+    if not initial_setup:
+        try:
+            note_select_window.destroy()
+        except:
+            pass
+        back_button = tk.Button(server_setup_window, text="<<", command=lambda:select_note(user))
+        back_button.pack(side=tk.LEFT, anchor=tk.NW)
+    else:
+        title_string = "Connect to mysql Server"
     server_setup_window.title(title_string)
     fields = ["Port Number", "Username", "Password", "New Database Name"]
     host_label = tk.Label(server_setup_window, text="Hostname: ix.cs.uoregon.edu", font=("Courier", 12))
@@ -141,7 +158,7 @@ def setup_server(user):
 
     def db_main():
         global admin_inputs
-        admin_inputs=[]
+        admin_inputs = []
         for x in admin_input_boxes:
             admin_inputs.append(x.get("1.0", "end-1c"))
         for i in range(0, 4):
@@ -187,10 +204,24 @@ def select_note(user):
                 cursor.close()
 
         connection = note_storage.connect_to_database(host, port, username, password, database)
-        user_select_window.destroy()
+        try:
+            user_select_window.destroy()
+        except:
+            pass
+        try:
+            server_setup_window.destroy()
+        except:
+            pass
+        try:
+            notepad_window.destroy()
+        except:
+            pass
         note_select_window = tk.Tk()
         note_select_window.geometry("150x220")
         note_select_window.title(f"Select Note for {user}")
+
+        back_button = tk.Button(note_select_window, text="<<", command=select_user)
+        back_button.pack(side=tk.LEFT, anchor=tk.NW)
 
         note_listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
         # Redo these next couple lines, make sure these note names are loaded in from the database
@@ -249,8 +280,11 @@ def select_note(user):
 text_box_count = 1
 #Opens the notepad
 def open_notepad(user, note, connection, dicts):
-    global note_select_window, note_name
-    note_select_window.destroy()
+    global note_name
+    try:
+        note_select_window.destroy()
+    except:
+        pass
     # SAVE BUTTON
     def get_note_name_text():
         if note_name:
@@ -313,9 +347,12 @@ def open_notepad(user, note, connection, dicts):
         prompt_box.config(text=get_prompt())
         prompt_box.after(10000, cycle_prompts)
 
+    global notepad_window
     notepad_window = tk.Tk()
     notepad_window.title(f"{user}: {note}") #Names the notepad
 
+    back_button = tk.Button(notepad_window, text="<<", command=lambda:select_note(user))
+    back_button.pack(side=tk.LEFT, anchor=tk.NW)
 
     scrollbar = tk.Scrollbar(notepad_window, orient=tk.VERTICAL)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -395,5 +432,4 @@ if __name__ == "__main__":
 
 #TODO
 # ability to hide fields
-# "back" buttons
 # bullets
