@@ -1,3 +1,6 @@
+# Authors: Brian Griffith, Elijah Thomas, Drew Tweedale
+
+
 import tkinter as tk
 from prompts import *
 import note_storage
@@ -170,10 +173,8 @@ def select_user():
     user_select_window.title("User Selection")
     user_select_window.geometry("200x300")
 
+    # Uses calls to note_storage to populate the users listbox, which will appear later
     def fetch_users():
-        """
-        Uses calls to note_storage to populate the users listbox, which will appear later
-        """
         users = []
         try:
             # Connect to the database
@@ -189,10 +190,8 @@ def select_user():
             print(f"Error fetching users: {err}")
         return users
 
+    # Use calls to note_storage to create a user with a new table in the database
     def create_new_user(user_name):
-        """
-        Use calls to note_storage to create a user with a new table in the database
-        """
         try:
             # Connect to the specific database
             connection = note_storage.connect_to_database(host, port, username, password, database)
