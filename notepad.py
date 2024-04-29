@@ -4,8 +4,9 @@ import note_storage
 from tkinter import simpledialog
 import config_handler
 from os.path import isfile, abspath
+from os import remove as os_remove
 
-user_select_window = None       # Glibally defined variables for tkinter windows
+user_select_window = None       # Globally defined variables for tkinter windows
 note_select_window = None
 server_setup_window = None
 notepad_window = None
@@ -211,6 +212,10 @@ def select_user():
     # If so, the app will behave in an undefined way, so I'll put this scary red banner here
     if note_storage.error_flag:
         tk.Label(bg="red", wraplength=200, width=30, height=3, text="Database connection error; please check the console and restart the application").pack()
+        # If the error flag is set, chances are the user entered un-workable database information
+        # Delete the config file so they have a chance to renew their information without manually
+        # editing config.txt
+        os_remove("config.txt")
 
     # Makes a listbox so you can choose the user
     listbox = tk.Listbox(user_select_window, selectmode=tk.SINGLE)
@@ -361,7 +366,7 @@ def select_note(user):
     
     No return value
 
-    
+
     """
     if user:
         global note_select_window, exist_notes
@@ -612,6 +617,3 @@ if __name__ == "__main__":
         select_user()
     else:
         setup_server("Admin")
-
-#TODO
-# ability to hide fields
