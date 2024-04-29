@@ -1,7 +1,23 @@
 # PDF Active Reading Asistant (ARA) For University of Oregon Students
 _Authors_: Brian Griffith, Elijah Thomas, Kaylee Thomas, Drew Tweedale
+_Created_: April 29, 2024
 
 ## Use Cases
+This assignment was created for Project 1 of CS 422. It provides University of Oregon students/faculty with a remote notetaking service. This note taking service guides the student through the SQ3R notetaking process with noninteractive prompts, and provides **hierarchal structuring of notes**.
+
+## Description of the System
+This program has two major major components: _notetaking_interface_ and _note_storage_.
+
+**notetaking_interface**
+* Supports the creation of multiple student users to store notes.
+* Supports the ability to create multiple notes per student user.
+* Provides **hierarchical ordering** of notes, with the ability to create _headers_ and _bulleted lists_.
+* This module was created using _tkinter_, provided through the Python Standard Library.
+
+**note_storage**
+* Performs a variety of "quality of life" operations, such as _creating a new database, creating a new user, and inserting/saving new notes_
+* Each _table_ in the database is a student, and each entry in the table is a note.
+* Each note has four parameters: note_name, headers, notes, and bullets. The note_name is unique, and the headers, notes, and bullets are _string representations of dictionaries_. The _key_ is the index representing the field's location in the note, and the _value_ is the text that was entered by the student.
 
 ## Setting Up the ARA
 
@@ -47,13 +63,33 @@ You will need to install the `mysql.connector` package to run this program. To d
 ```
 pip install mysql-connector-python
 ```
-_Exchange pip for pip3 if needed_
+_Exchange pip for pip3 depending on your version of Python._
 
-#### Admin Setup
+#### Initial Setup
 
-To configure the database, first select to the _admin_ user. This user has a `Server Setup` option, where the user can configure the server connection properties: `host, port, username, and password`. These settings are what we created in the previous step.
+When first running the program, you will be asked to provide connection information to the MySQL instance you've created. Provide the username, password, port number, and a name for the note storage system you wish to create. 
 
+Once entered, you will have a note storage system with an _admin_ account premade. This _admin_ account has access to sample SQ3R notes, as well as the ability to change the notetaking storage connection configuration. You will also have the ability to create a new student user for each student using the database.
 
+#### Side notes
+
+_When running the program, make sure you are running `notepad.py` **from the working directory**._
+### Specific Module Descriptions
+
+#### notepad.py / note_storage.py
+These modules were described in depth at the beginning of the README.
+#### prompts.py
+A simple program that parses guide_prompts.txt and returns a list containing SQ3R prompts to display.
+#### guide_prompts.txt
+A list of SQ3R guidelines to aide the student in SQ3R notetaking.
+#### config_handler.py
+A file IO module that either writes a new config.txt file from a Python dictionary or returns a list from an existing config.txt file.
+
+The file contains all pairs in the dictionary in the format key: value (newline character).
+
+When the config.txt file is parsed, only the values are taken into account. Each of these values is stored in a global variable in notepad.py and used to establish and maintain the database connection.
+#### config.txt
+This contains important connection information to the MySQL database, such as the port number, the username, the password, and the name of the database.
 
 
 
