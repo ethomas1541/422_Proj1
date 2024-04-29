@@ -1,3 +1,5 @@
+# Author: Drew Tweedale
+
 """
 This file is a config file for the preloaded sample notes for Chapter 2 of Sommerville"s textbook. It contains
 three string representations of dictionaries and a note_name that are parsed by note_storage.py when creating the

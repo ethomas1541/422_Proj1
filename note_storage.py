@@ -1,3 +1,8 @@
+# Authors: Elijah Thomas, Drew Tweedale
+#                           ... mostly Drew (the names are alphabetical)
+
+
+
 import mysql.connector
 from mysql.connector import Error
 import samplepdf

@@ -1,5 +1,46 @@
 # Authors: Brian Griffith, Elijah Thomas, Drew Tweedale
 
+# Core module of the project, governing all visible UI and making all database calls relevant to populating, maintaining
+# and updating said UI.
+
+# Key elements:
+"""
+    TextBoxWithDefaultText
+        Class used as a wrapper for the tkinter Text object. Used in very different ways either on the notepad screen
+        or on the administrative server setup screen. This class is engineered to detect which screen it's on during
+        instantiation and to change its behavior accordingly.
+
+    server_setup(user)
+        Essentially a wrapper for the config_handler module, which ensures that any server data entered is cached and
+        can later be reconfigured by an admin user.
+
+        On the program's first launch, the application has no knowledge of its sql server, so it is implied that the
+        user should type in the necessary information.
+
+        May serve as a launch point into select_user, or may require use of the back button, depending on how
+        the function was called
+
+    select_user()
+        This function both validates the entered server configuration information, displaying a warning if it's not
+        usable, making appropriate database queries if it is valid information, then populating the related UI with
+        the results of those queries.
+
+        Afterward, select_note is fired with the selected user as an argument.
+
+    select_note(user)
+        Opens a screen very similar to select_user(), except populated by a collection of the given user's note tables.
+
+        Afterward, open_notepad is fired with several arguments collected from this function and select_user.
+
+    open_notepad(user, note, connection, dicts)
+        Arguments are defined at length in the related docstring
+
+        Opens the notepad view, the main part of the program. If <note> refers to an existing note in the database,
+        the entire structure of that note will be retrieved from the database, deserialized and placed in direct
+        view of the user.
+
+        Also contains a save button which manages serializing and sending data to the database.
+"""
 
 import tkinter as tk
 from prompts import *
