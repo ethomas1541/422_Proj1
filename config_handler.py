@@ -4,7 +4,9 @@
 # This means that the user only has to be asked ONCE for the login information
 
 # Admin accounts have the ability to override this config file, changing to an instance on a different port 
-# on the ix server, a different user on that instance, or a different database within that instance 
+# on the ix server, a different user on that instance, or a different database within that instance
+
+# Of course, if they choose to override it, we just need to make a new config file with whatever changes they've made.
 
 import fileinput
 from os import remove
