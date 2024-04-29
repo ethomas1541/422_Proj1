@@ -1,7 +1,23 @@
 # PDF Active Reading Asistant (ARA) For University of Oregon Students
 _Authors_: Brian Griffith, Elijah Thomas, Kaylee Thomas, Drew Tweedale
+_Created_: April 29, 2024
 
 ## Use Cases
+This assignment was created for Project 1 of CS 422. It provides University of Oregon students/faculty with a remote notetaking service. This note taking service guides the student through the SQ3R notetaking process with noninteractive prompts, and provides **hierarchal structuring of notes**.
+
+## Description of the System
+This program has two major major components: _notetaking_interface_ and _note_storage_.
+
+**notetaking_interface**
+* Supports the creation of multiple student users to store notes.
+* Supports the ability to create multiple notes per student user.
+* Provides **hierarchical ordering** of notes, with the ability to create _headers_ and _bulleted lists_.
+* This module was created using _tkinter_, provided through the Python Standard Library.
+
+**note_storage**
+* Performs a variety of "quality of life" operations, such as _creating a new database, creating a new user, and inserting/saving new notes_
+* Each _table_ in the database is a student, and each entry in the table is a note.
+* Each note has four parameters: note_name, headers, notes, and bullets. The note_name is unique, and the headers, notes, and bullets are _string representations of dictionaries_. The _key_ is the index representing the field's location in the note, and the _value_ is the text that was entered by the student.
 
 ## Setting Up the ARA
 
