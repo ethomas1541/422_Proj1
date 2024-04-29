@@ -31,6 +31,8 @@ class TextBoxWithDefaultText:
         self.textbox.insert("1.0", self.default_text)
         self.textbox.bind("<FocusIn>", self.remove_default_text)
         self.textbox.bind("<FocusOut>", self.restore_default_text)
+        if self.mode == "BULLET_LIST":
+            self.textbox.bind("<Key>", self.add_bullets)
         self.textbox.pack(fill=tk.BOTH, expand=True)
         if is_on_notepad:
             global note_boxes
@@ -47,6 +49,26 @@ class TextBoxWithDefaultText:
     def restore_default_text(self, event):
         if not self.textbox.get("1.0", "end-1c"):
             self.textbox.insert("1.0", self.default_text)
+
+    def add_bullets(self, event):
+        if(event.keysym == "Return"):
+            raw_text = self.textbox.get("1.0", "end-1c")
+            if not raw_text:
+                self.textbox.insert("1.0", self.default_text)
+            else:
+                lines = raw_text.split("\n")
+                bulleted_lines = []
+                self.textbox.delete("1.0", tk.END)
+                # print("\n".join(lines))
+                for x in lines:
+                    try:
+                        if x[0] != "●":
+                            bulleted_lines.append("● " + x)
+                        else:
+                            bulleted_lines.append(x)
+                    except:
+                        pass
+                self.textbox.insert("1.0", "\n".join(bulleted_lines))
 
 #User selection
 def select_user():
@@ -280,7 +302,8 @@ def select_note(user):
 text_box_count = 1
 #Opens the notepad
 def open_notepad(user, note, connection, dicts):
-    global note_name
+    global note_name, note_boxes
+    note_boxes = []
     try:
         note_select_window.destroy()
     except:
@@ -400,17 +423,17 @@ def open_notepad(user, note, connection, dicts):
         bullet_keys = true_dicts[2].keys()
         for key in true_dicts[0]:
             ikey = int(key)
-            print(ikey)
+            # print(ikey)
             if key in note_keys:
                 new_boxpair = add_text_boxes("Notes...")
-                print(new_boxpair)
+                #print(new_boxpair)
                 new_boxpair[0].textbox.delete("1.0", tk.END)
                 new_boxpair[0].textbox.insert("1.0", true_dicts[0][key])
                 new_boxpair[1].textbox.delete("1.0", tk.END)
                 new_boxpair[1].textbox.insert("1.0", true_dicts[1][key])
             else:
                 new_boxpair = add_text_boxes("Bullets...")
-                print(new_boxpair)
+                #print(new_boxpair)
                 new_boxpair[0].textbox.delete("1.0", tk.END)
                 new_boxpair[0].textbox.insert("1.0", true_dicts[0][key])
                 new_boxpair[1].textbox.delete("1.0", tk.END)
@@ -432,4 +455,3 @@ if __name__ == "__main__":
 
 #TODO
 # ability to hide fields
-# bullets
