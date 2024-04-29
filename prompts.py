@@ -1,3 +1,5 @@
+# 
+
 import fileinput
 from random import randint
 

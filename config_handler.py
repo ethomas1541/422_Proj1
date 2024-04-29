@@ -1,12 +1,23 @@
+# Author: Elijah Thomas
+
+# Module for writing to and reading from a config.txt file that persists between launches of the program
+# This means that the user only has to be asked ONCE for the login information
+
+# Admin accounts have the ability to override this config file, changing to an instance on a different port 
+# on the ix server, a different user on that instance, or a different database within that instance 
+
 import fileinput
+from os import remove
 
 def write_config(lines:dict):
     try:
+        # This raises an error if the con
         file = open("config.txt", "x")
         for key in lines:
             file.write(f"{key}: {lines[key]}\n")
     except:
-        pass
+        remove("config.txt")
+        write_config(lines)
 
 def read_config():
     ret = []

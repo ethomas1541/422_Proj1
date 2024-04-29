@@ -230,7 +230,7 @@ def select_note(user):
                 print("Selected Note", selected_note_string)
                 connection = testdatabase.connect_to_database(host, 3854, username, password, database)
                 dictionaries = fetch_note_details(connection, user, selected_note_string)
-                print(dictionaries)
+                # print(dictionaries)
                 open_notepad(user, selected_note_string, connection, dictionaries)
 
         button = tk.Button(note_select_window, text="Select Note", command=get_selection)
@@ -298,6 +298,7 @@ def open_notepad(user, note, connection, dicts):
         TextBoxWithDefaultText(notepad_frame, box_type, notesfont, height=5, mode=mode, is_on_notepad=True)
         canvas.update_idletasks()  # Update the canvas to reflect the two new note pads
         canvas.config(scrollregion=canvas.bbox("all"))  # Rescales the region you can scroll in
+        return (note_boxes[-2], note_boxes[-1])
 
     def toggle_prompts():
         global prompts_enabled, prompt_box
@@ -351,6 +352,33 @@ def open_notepad(user, note, connection, dicts):
     #Runs the program
     
     cycle_prompts()
+
+    if len(dicts):
+        print("You are loading an EXISTING note")
+        note_boxes[0].textbox.delete("1.0", tk.END)
+        note_boxes[0].textbox.insert("1.0", note)
+        true_dicts = [eval(dicts[x]) for x in range(3)]
+        print(true_dicts)
+        note_keys = true_dicts[1].keys()
+        bullet_keys = true_dicts[2].keys()
+        for key in true_dicts[0]:
+            ikey = int(key)
+            print(ikey)
+            if key in note_keys:
+                new_boxpair = add_text_boxes("Notes...")
+                print(new_boxpair)
+                new_boxpair[0].textbox.delete("1.0", tk.END)
+                new_boxpair[0].textbox.insert("1.0", true_dicts[0][key])
+                new_boxpair[1].textbox.delete("1.0", tk.END)
+                new_boxpair[1].textbox.insert("1.0", true_dicts[1][key])
+            else:
+                new_boxpair = add_text_boxes("Bullets...")
+                print(new_boxpair)
+                new_boxpair[0].textbox.delete("1.0", tk.END)
+                new_boxpair[0].textbox.insert("1.0", true_dicts[0][key])
+                new_boxpair[1].textbox.delete("1.0", tk.END)
+                new_boxpair[1].textbox.insert("1.0", true_dicts[2][key])
+
     notepad_window.mainloop()
 
 if __name__ == "__main__":
@@ -370,3 +398,4 @@ if __name__ == "__main__":
 # ability to hide fields
 # "back" buttons
 # bullets
+# change testdatabase (the file name) to note_storage
