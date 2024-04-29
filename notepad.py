@@ -1,6 +1,6 @@
 import tkinter as tk
 from prompts import *
-import testdatabase
+import note_storage
 from tkinter import simpledialog
 import config_handler
 from os.path import isfile, abspath
@@ -61,7 +61,7 @@ def select_user():
         users = []
         try:
             # Connect to the database
-            connection = testdatabase.connect_to_database(host, port, username, password, database)
+            connection = note_storage.connect_to_database(host, port, username, password, database)
             if connection:
                 cursor = connection.cursor()
                 cursor.execute("SHOW TABLES")
@@ -69,21 +69,21 @@ def select_user():
                 tables = cursor.fetchall()
                 users = [table[0].split('_')[0] for table in tables]  # Extract usernames from table names
                 connection.close()
-        except testdatabase.Error as err:
+        except note_storage.Error as err:
             print(f"Error fetching users: {err}")
         return users
 
     def create_new_user(user_name):
         try:
             # Connect to the specific database
-            connection = testdatabase.connect_to_database(host, port, username, password, database)
+            connection = note_storage.connect_to_database(host, port, username, password, database)
             if connection:
                 # Check if user table exists or create new one
-                testdatabase.check_or_create_user_table(connection, user_name)
+                note_storage.check_or_create_user_table(connection, user_name)
                 connection.close()
                 print("New user created successfully.")
                 return True
-        except testdatabase.Error as err:
+        except note_storage.Error as err:
             print(f"Error creating new user: {err}")
         return False
     
@@ -154,7 +154,7 @@ def setup_server(user):
             "Password": admin_inputs[2],
             "Database Name": admin_inputs[3]
         })
-        testdatabase.main(admin_inputs[0], admin_inputs[1], admin_inputs[2], admin_inputs[3], str.replace(user, " ", "_"))
+        note_storage.main(admin_inputs[0], admin_inputs[1], admin_inputs[2], admin_inputs[3], str.replace(user, " ", "_"))
         global port, username, password, database
         port = admin_inputs[0]
         username = admin_inputs[1]
@@ -180,13 +180,13 @@ def select_note(user):
                 result = cursor.fetchall()
                 note_names = [note_name[0] for note_name in result] if result else []
                 return note_names
-            except testdatabase.Error as err:
+            except note_storage.Error as err:
                 print(f"Error fetching notes: {err}")
                 return []
             finally:
                 cursor.close()
 
-        connection = testdatabase.connect_to_database(host, port, username, password, database)
+        connection = note_storage.connect_to_database(host, port, username, password, database)
         user_select_window.destroy()
         note_select_window = tk.Tk()
         note_select_window.geometry("150x220")
@@ -215,7 +215,7 @@ def select_note(user):
                 else:
                     print(f"No note found with the name '{note_name}'.")
                     return []
-            except testdatabase.Error as err:
+            except note_storage.Error as err:
                 print(f"Failed to fetch note data: {err}")
                 return []
             finally:
@@ -223,12 +223,12 @@ def select_note(user):
         
         selected_note = None
         def get_selection():
-            connection = testdatabase.connect_to_database(host, port, username, password, database)
+            connection = note_storage.connect_to_database(host, port, username, password, database)
             selected_note = note_listbox.curselection()
             if selected_note:
                 selected_note_string = note_listbox.get(selected_note[0])
                 print("Selected Note", selected_note_string)
-                connection = testdatabase.connect_to_database(host, 3854, username, password, database)
+                connection = note_storage.connect_to_database(host, 3854, username, password, database)
                 dictionaries = fetch_note_details(connection, user, selected_note_string)
                 # print(dictionaries)
                 open_notepad(user, selected_note_string, connection, dictionaries)
@@ -285,7 +285,7 @@ def open_notepad(user, note, connection, dicts):
                 bullets[cur_header_str] = ith_box_text
                 cur_header += 1
 
-        testdatabase.insert_note_data(connection, user, note_name, str(headers), str(notes), str(bullets))
+        note_storage.insert_note_data(connection, user, note_name, str(headers), str(notes), str(bullets))
     def add_text_boxes(box_type):
         mode = "NOTES"
         if box_type[0] == "B":
@@ -394,8 +394,6 @@ if __name__ == "__main__":
         setup_server("Admin")
 
 #TODO
-# populate notes loaded from database w/ data from database
 # ability to hide fields
 # "back" buttons
 # bullets
-# change testdatabase (the file name) to note_storage
