@@ -301,7 +301,7 @@ def setup_server(user):
     # ...Except this one, which is hardcoded.
     host_label = tk.Label(server_setup_window, text="Hostname: ix.cs.uoregon.edu", font=("Courier", 12))
     host_label.pack()
-    # Make a TBw/DT for each field in fields
+    # Make a TBw/DT (TextBoxWithDefaultText) for each field in fields
     for x in fields:
         # The objects created by instantiation here get appended to admin_input_boxes
         TextBoxWithDefaultText(server_setup_window, x, ("Courier", 12), width=20, height=1)
@@ -366,16 +366,19 @@ def select_note(user):
     
     No return value
 
-
+    Once the user given by user's list of notes has been retreived, the next step is to ask the user which
+    notes table they would like to access. This function handles that entire process and wraps it all in UI.
     """
     if user:
         global note_select_window, exist_notes
 
         # Function to fetch notes from the database
         def fetch_notes(connection, user):
+            # Focus on the corresponding table in the database, named with the convention shown in note_storage.py
             table_name = f"{user}_notes"
             cursor = connection.cursor()
             try:
+                # SQL query
                 cursor.execute(f"SELECT note_name FROM {table_name}")
                 result = cursor.fetchall()
                 note_names = [note_name[0] for note_name in result] if result else []
@@ -386,7 +389,11 @@ def select_note(user):
             finally:
                 cursor.close()
 
+        # See relevant commentary in note_storage
         connection = note_storage.connect_to_database(host, port, username, password, database)
+        
+        # There are a lot of originator windows that can reach this one, so we need to slaughter the whole lot of them
+        # unless we want the screen to get crowded really quickly
         try:
             user_select_window.destroy()
         except:
@@ -399,33 +406,42 @@ def select_note(user):
             notepad_window.destroy()
         except:
             pass
+
+        # Make overarching window
         note_select_window = tk.Tk()
         note_select_window.geometry("250x250")
         note_select_window.title(f"Select Note for {user}")
 
+        # Insert back button with function for previous window attached
         back_button = tk.Button(note_select_window, text="<<", command=select_user)
         back_button.pack(side=tk.LEFT, anchor=tk.NW)
 
         note_listbox = tk.Listbox(note_select_window, selectmode=tk.SINGLE)
-        # Redo these next couple lines, make sure these note names are loaded in from the database
-        # These hard-coded ones need to be replaced with actual content
+        
+        # Populate note_listbox with the notes we've retrieved for the user from the database
         exist_notes = fetch_notes(connection, user)
         for note in exist_notes:
             note_listbox.insert(tk.END, note)
         
+        # Option to create a new note will be at the bottom
         note_listbox.insert(tk.END, "Create a new note")
         note_listbox.pack()
         
+        # Master function for loading a note from the database back into the actual application where it can then
+        # be edited, expanded, saved or renamed at the user's will
         def fetch_note_details(connection, username, note_name):
+            # Find the table associated with the user, just as in fetch_notes
             table_name = f"{username}_notes"
             cursor = connection.cursor()
             try:
+                # SQL query to said table
                 cursor.execute(f"""
                     SELECT headers, notes, bullets FROM {table_name} WHERE note_name = %s
                 """, (note_name,))
                 result = cursor.fetchone()
                 if result:
                     return list(result) # Convert the tuple to a list and return it
+                # This case will fire if "Create new note" is selected
                 else:
                     print(f"No note found with the name '{note_name}'.")
                     return []
@@ -434,8 +450,8 @@ def select_note(user):
                 return []
             finally:
                 cursor.close()
-        
-        selected_note = None
+
+        # Function to be bound to the select note button
         def get_selection():
             connection = note_storage.connect_to_database(host, port, username, password, database)
             selected_note = note_listbox.curselection()
@@ -445,36 +461,75 @@ def select_note(user):
                 connection = note_storage.connect_to_database(host, 3854, username, password, database)
                 dictionaries = fetch_note_details(connection, user, selected_note_string)
                 # print(dictionaries)
+                # dictionaries stores a serialized data structure that we will use to load the
+                # data back into the notepad
                 open_notepad(user, selected_note_string, connection, dictionaries)
 
         button = tk.Button(note_select_window, text="Select Note", command=get_selection)
         button.pack()
 
-        # Very stupid little check to see if the user is an admin
-        # The predefined usernames we have only provide one admin account, and the user can't change the usernames
-        # So it works - for now
+        # Not exactly a secure check to see if the user's an admin, but it works for now.
+        # Only give the user any permission to influence the database configuration if they're an admin
+        # Lambda is used here for the same reasons it was used on line ~290
         if user == "Admin":
             button = tk.Button(note_select_window, text="Server Setup", command=lambda:setup_server(user))
             button.pack()
 
+    # This should be unreachable, and is only here for debugging
     else:
         print(user)
 
 text_box_count = 1
 #Opens the notepad
 def open_notepad(user, note, connection, dicts):
+    """
+    args:
+        user:
+            A string containing the username of the user for which the note is being retrieved/newly created
+
+        note:
+            The name of the note being opened
+
+        connection:
+            mysql object referring to an existing connection to the database
+
+        dicts:
+            Serialized data containing the information contained in the database for the given note
+            If the user has selected "create a new note", this will be []
+
+    No return value
+
+    The main workhorse of the entire project, and the most complex window. This is where the database, the
+    TextBoxWithDefaultText class, its subordinate hide buttons and the prompts library all come together
+    in the main feature.
+
+    Text boxes can be added manually, two-at-a-time with respect to the fact that each note/bullet point field
+    is created with a header field immediately preceding it
+
+    All fields have hide buttons associated with them regardless of their <mode> parameter
+
+    Text boxes cannot currently be removed, however those not saved manually with the save button will be
+    entirely forgotten when reloaded from the database, allowing for some superficial "temporary" note-taking
+    """
     global note_name, note_boxes
+    # Empty out this global array, otherwise notes from a previous session might creep in
+    # which will almost certainly cause a runtime error
     note_boxes = []
+
+    # Destroy the note select window where applicable
     try:
         note_select_window.destroy()
     except:
         pass
-    # SAVE BUTTON
+
+    # Small helper function that calls a generic tkinter get function
     def get_note_name_text():
         if note_name:
             return note_name.textbox.get("1.0", "end-1c")
         else:
             return None
+    
+    # Serialize the data entered into the boxes, allowing easy transportation to the database
     def get_text():
         headers = {}
         notes = {}
@@ -482,7 +537,7 @@ def open_notepad(user, note, connection, dicts):
         note_name = get_note_name_text()
         cur_header = 0
         # Sort all note boxes except the title into dictionaries
-        # These will represent couplings between titles and subordinate note/bullet fields
+        # These will represent couplings between headings and subordinate note/bullet fields
         for i in range(1, len(note_boxes)):
             ith_box = note_boxes[i]
             ith_box_text = ith_box.textbox.get("1.0", "end-1c")
@@ -503,21 +558,34 @@ def open_notepad(user, note, connection, dicts):
                 bullets[cur_header_str] = ith_box_text
                 cur_header += 1
 
+        # Make a call to note_storage, inserting the serialized data into the database
         note_storage.insert_note_data(connection, user, note_name, str(headers), str(notes), str(bullets))
+    
+    # Very important function, both for the user and for loading in data from the database
     def add_text_boxes(box_type):
+        # Assume a default mode
         mode = "NOTES"
+        # Switch to bulleted list if we're proven wrong
         if box_type[0] == "B":
             mode = "BULLET_LIST"
         global text_box_count
         text_box_count += 1
         headingfont = ("Arial", 15)
         notesfont = ("Arial", 12)
+        # Whenever boxes are added, a heading field gets added inevitably. Here it is, with its default text hard-coded.
         TextBoxWithDefaultText(notepad_frame, "Heading...", headingfont, mode="HEADING", is_on_notepad=True)
         TextBoxWithDefaultText(notepad_frame, box_type, notesfont, height=5, mode=mode, is_on_notepad=True)
         canvas.update_idletasks()  # Update the canvas to reflect the two new note pads
         canvas.config(scrollregion=canvas.bbox("all"))  # Rescales the region you can scroll in
+        # We need references to the two newly-created text boxes, in case they're going to be populated with
+        # incoming text from the database
+        # Unfortunately we can't get a return value from TextBoxWithDefaultText.__init__(), but since that very
+        # same function appends the boxes to the note_boxes list, we can use some clever indexing to find out where
+        # they are and return them as a tuple
         return (note_boxes[-2], note_boxes[-1])
 
+    # Fairly self-explanatory. When the user clicks this, invert the prompts_enabled global bool and pack or unpack
+    # the prompt_box tkinter object accordingly
     def toggle_prompts():
         global prompts_enabled, prompt_box
         prompts_enabled = not prompts_enabled
@@ -526,18 +594,24 @@ def open_notepad(user, note, connection, dicts):
         else:
             prompt_box.pack_forget()
 
+    # Runs "asynchronously", though not in the usual Python way
     def cycle_prompts():
-        global prompt_box   
+        global prompt_box
+        # This function gets a random prompt as described in prompts.py
         prompt_box.config(text=get_prompt())
+        # This makes a recursive call to the function every 10 seconds
         prompt_box.after(10000, cycle_prompts)
 
+    # Air this as a global variable so it can be destroyed by another window if we choose to go back
     global notepad_window
     notepad_window = tk.Tk()
     notepad_window.title(f"{user}: {note}") #Names the notepad
 
+    # Another lambda, see lines 290-300
     back_button = tk.Button(notepad_window, text="<<", command=lambda:select_note(user))
     back_button.pack(side=tk.LEFT, anchor=tk.NW)
 
+    # Scrollbar
     scrollbar = tk.Scrollbar(notepad_window, orient=tk.VERTICAL)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -545,6 +619,7 @@ def open_notepad(user, note, connection, dicts):
     button = tk.Button(notepad_window, text="Save Note", command=get_text)
     button.pack()
 
+    # The element that will hold the frame for the notes and corresponding hide buttons
     canvas = tk.Canvas(notepad_window, yscrollcommand=scrollbar.set)
     canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
@@ -554,49 +629,65 @@ def open_notepad(user, note, connection, dicts):
     canvas.config(yscrollcommand=scrollbar.set, scrollregion=canvas.bbox("all"))
     scrollbar.config(command=canvas.yview)
 
+    # Vertical frame on the left-side margin that is used to hide corresponding notes
+    # (turn the text white)
     global hide_button_frame
     hide_button_frame = tk.Frame(notepad_frame)
     hide_button_frame.pack(side=tk.LEFT, anchor="ne")
 
     chapterfont = ("Arial", 18)
+    # Instantiate TBw/DT
     note_name = TextBoxWithDefaultText(notepad_frame, "Note Name", chapterfont, is_on_notepad=True)
 
+    # Button for adding coupled note box and its title
     add_button = tk.Button(notepad_window, text="Add Text Boxes", command=lambda:add_text_boxes("Notes..."))
     add_button.pack(pady=5)
 
+    # Same thing for bullet list box and its title
     bullet_button = tk.Button(notepad_window, text="Add Bulleted Points", command=lambda:add_text_boxes("Bulleted List..."))
     bullet_button.pack(pady=5)
 
+    # This is where the prompt box can be toggled on and off
     toggle_prompts_button = tk.Button(notepad_window, text="Toggle Prompts", command=toggle_prompts)
     toggle_prompts_button.pack(pady=20)
 
+    # Prompt box
     global prompt_box
     prompt_box = tk.Label(notepad_window, text=get_prompt(), width=20, wraplength=140, bg="yellow", borderwidth=3, relief="sunken")
     prompt_box.pack(pady=5)
 
-    #Runs the program
-    
+    # Must be fired manually
     cycle_prompts()
 
+    # This conditional is true if the database contains an existing record with the given note name
+    # If this is the case, we need some special code to load them into new text boxes.
     if len(dicts):
         print("You are loading an EXISTING note")
+        # There's only one title field, so we access that directly
         note_boxes[0].textbox.delete("1.0", tk.END)
         note_boxes[0].textbox.insert("1.0", note)
+
+        # Right now, dicts contains strings that "look" like dictionaries. eval python-ifies them, turning them into
+        # actual dictionaries.
         true_dicts = [eval(dicts[x]) for x in range(3)]
         print(true_dicts)
+
+        # Will be needed for ascertaining if this is a note field or a bullet field
         note_keys = true_dicts[1].keys()
-        bullet_keys = true_dicts[2].keys()
         for key in true_dicts[0]:
-            ikey = int(key)
-            # print(ikey)
+            # If there's a key match between the 0th and 1st dictionaries, that means we have a header
+            # paired with a note field
             if key in note_keys:
                 new_boxpair = add_text_boxes("Notes...")
-                #print(new_boxpair)
+                #               ^^^ this will return a tuple with two TBw/DT objects in it
+                # So here we override the textbox text in those objects with whatever we got from the database
                 new_boxpair[0].textbox.delete("1.0", tk.END)
                 new_boxpair[0].textbox.insert("1.0", true_dicts[0][key])
                 new_boxpair[1].textbox.delete("1.0", tk.END)
                 new_boxpair[1].textbox.insert("1.0", true_dicts[1][key])
             else:
+                # Exact same code, but with slight numeric/symantic adjustments for alternatively loading in a bullet
+                # point field
                 new_boxpair = add_text_boxes("Bullets...")
                 #print(new_boxpair)
                 new_boxpair[0].textbox.delete("1.0", tk.END)
@@ -604,16 +695,25 @@ def open_notepad(user, note, connection, dicts):
                 new_boxpair[1].textbox.delete("1.0", tk.END)
                 new_boxpair[1].textbox.insert("1.0", true_dicts[2][key])
 
+    # Run the window, at long last...
     notepad_window.mainloop()
 
 if __name__ == "__main__":
+    # If there's a config file, try to load it. The validation check will happen in select_user momentarily.
     print(abspath("config.txt"))
     if(isfile(abspath("config.txt"))):
         config_lines = config_handler.read_config()
+        # Load the config file into our global variables
         port = config_lines[0]
         username = config_lines[1]
         password = config_lines[2]
         database = config_lines[3]
+        # Move to user select
         select_user()
     else:
+        # Without a config file, the program has no idea how to reach the mysql server.
+        # So, make the user give us one!
+
+        # setup_server will later make a call to select_user which will check for validation, so the mysql
+        # validation check is functionally unavoidable
         setup_server("Admin")
