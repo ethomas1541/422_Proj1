@@ -196,12 +196,6 @@ def main(port, user, password, database, ara_username):
 
 
     host = 'ix.cs.uoregon.edu'
-    """
-    port = 3854
-    user = 'dtweedale'
-    password = 'password'
-    database = input("Enter a name for the database:")
-    """
 
     # Connect to MySQL Server (without specific database)
     connection = connect_to_mysql(host, port, user, password)
