@@ -1,7 +1,8 @@
-# Authors: Elijah Thomas, Drew Tweedale
-#                           ... mostly Drew (the names are alphabetical)
+# Authors: Brian Griffith, Elijah Thomas, Drew Tweedale
+# Last Modified: April 29 2024
 
-
+# This module establishes connection with the note storage system and stores the users notes within 
+# their associated table in the system.
 
 import mysql.connector
 from mysql.connector import Error
@@ -12,6 +13,17 @@ error_flag = False #variable for tracking errors
 
 #Makes a new database if there is no database
 def create_database_if_not_exists(connection, database_name):
+    """
+        Args:
+            connection:
+                Object used for accessing the server
+
+            database_name:
+                Name of the datbase you are checking for the existence of
+
+        This function checks for if the database exists and creates one if it doesn't 
+    """
+
     cursor = connection.cursor() #variable for iterating through the database
     cursor.execute(f"SHOW DATABASES LIKE '{database_name}'") #checks if a database with database name exists
     result = cursor.fetchone() #checks if theres anything in the database
@@ -27,6 +39,22 @@ def create_database_if_not_exists(connection, database_name):
 
 #Connects to the server
 def connect_to_mysql(host, port, user, password):
+    """
+        host:
+            Name of the host you are connecting to
+        port:
+            The port number that the host is listening on
+        user:
+            Name of the user
+        password:
+            Password associated with the user
+
+        Returns:
+            Object for interacting with the server or none if no connection is established
+
+        Establishes the initial connection to the server    
+    """
+
     try:
         #Establishes a connection to the server and returns an object that allows access to the server
         return mysql.connector.connect(host=host, port=port, user=user, password=password)
@@ -39,6 +67,25 @@ def connect_to_mysql(host, port, user, password):
 
 #Connects to the database
 def connect_to_database(host, port, user, password, database):
+    """
+        host:
+            Name of the host you are connecting to
+        port:
+            The port number that the host is listening on
+        user:
+            Name of the user
+        password:
+            Password associated with the user
+        database:
+            Name of the database you are connecting to
+
+        Returns:
+            Object for interacting with the database on the server or none if no connection is established
+
+        Establishes connection to the MySQL database
+    """
+
+
     try:
         #Establishes a connection to the database on the server and returns an object that allows access to the database
         return mysql.connector.connect(host=host, port=port, user=user, password=password, database=database)
@@ -49,9 +96,21 @@ def connect_to_database(host, port, user, password, database):
         error_flag = True
         return None
 
-#Makes sure there is a user table and creates one if there isnt
 def check_or_create_user_table(connection, username):
-    table_name = f"{username}_notes"
+    """
+        Args:
+            connection:
+                Object used for accessing the server
+
+            username:
+                String that identifies the user
+
+        
+        Makes sure there is a user table and creates one if there isnt
+    """
+
+
+    table_name = f"{username}_notes" #makes a user table using the username
     cursor = connection.cursor()
     cursor.execute(f"SHOW TABLES LIKE '{table_name}'") #Connects to the table
     result = cursor.fetchone() #Checks for first item
@@ -73,8 +132,30 @@ def check_or_create_user_table(connection, username):
             print(f"Failed to create table '{table_name}': {err}")
     cursor.close()
 
-#Adds all the note contents to the database
 def insert_note_data(connection, username, note_name, headers, notes, bullets):
+    """
+        Args:
+            connection:
+                Object used for accessing the server
+
+            username:
+                String that identifies the user
+
+            note_name:
+                String that identifies the note in the database
+
+            headers:
+                All of the heading sections of the notes to be stored in the database
+
+            notes:
+                All of the notes to be stored in the database
+
+            bullets:
+                All of the notes that start with bullet points to be stored in the database
+    
+        Adds all the note contents to the database in their associated sections.
+    """
+
     table_name = f"{username}_notes"
     cursor = connection.cursor()
     try:
@@ -96,6 +177,23 @@ def insert_note_data(connection, username, note_name, headers, notes, bullets):
     cursor.close()
 
 def main(port, user, password, database, ara_username):
+    """
+        Args: 
+            port: 
+                The port number to connect to the MySQL server
+            user:
+                String that identifies the user
+            password: 
+                Password associated with the user
+            database: 
+                Name of the database being used.
+            ara_username:
+                The username for the created user.
+
+        First ensures connection to the database then stores users note data into the database
+    """
+
+
     host = 'ix.cs.uoregon.edu'
     """
     port = 3854
