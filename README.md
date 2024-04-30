@@ -1,6 +1,7 @@
 # PDF Active Reading Asistant (ARA) For University of Oregon Students
 _Authors_: Brian Griffith, Elijah Thomas, Kaylee Thomas, Drew Tweedale
-_Created_: April 29, 2024
+_Last Modified_: April 29, 2024
+_Group_: Group 5
 
 ## Use Cases
 This assignment was created for Project 1 of CS 422. It provides University of Oregon students/faculty with a remote notetaking service. This note taking service guides the student through the SQ3R notetaking process with noninteractive prompts, and provides **hierarchal structuring of notes**.
