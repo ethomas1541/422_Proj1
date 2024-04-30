@@ -66,7 +66,10 @@ pip install mysql-connector-python
 _Exchange pip for pip3 depending on your version of Python._
 
 #### Initial Setup
-
+In the directory `notepad.py` is stored in, enter:
+```
+python3 notepad.py
+ ```
 When first running the program, you will be asked to provide connection information to the MySQL instance you've created. Provide the username, password, port number, and a name for the note storage system you wish to create. 
 
 Once entered, you will have a note storage system with an _admin_ account premade. This _admin_ account has access to sample SQ3R notes, as well as the ability to change the notetaking storage connection configuration. You will also have the ability to create a new student user for each student using the database.
