@@ -1,4 +1,6 @@
 # Author: Elijah Thomas
+# Last modified: April 27 2024
+# Group 5
 
 # Module for rapidly providing SQ3R-related prompt material stored in the static file guide_prompts.txt
 

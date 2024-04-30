@@ -1,6 +1,6 @@
-# Group 5
 # Authors: Brian Griffith, Elijah Thomas, Drew Tweedale
 # Last Modified: April 29 2024
+# Group 5
 
 # This module establishes connection with the note storage system and stores the users notes within 
 # their associated table in the system.

@@ -1,4 +1,6 @@
 # Author: Elijah Thomas
+# Last modified: April 27 2024
+# Group 5
 
 # Module for writing to and reading from a config.txt file that persists between launches of the program
 # This means that the user only has to be asked ONCE for the login information

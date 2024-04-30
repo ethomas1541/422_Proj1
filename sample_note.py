@@ -1,4 +1,6 @@
 # Author: Drew Tweedale
+# Last modified: April 27 2024
+# Group 5
 
 """
 This file is a config file for the preloaded sample notes for Chapter 2 of Sommerville"s textbook. It contains

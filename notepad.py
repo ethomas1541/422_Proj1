@@ -1,5 +1,6 @@
 # Authors: Brian Griffith, Elijah Thomas, Drew Tweedale
 # Last modified: April 27 2024
+# Group 5
 
 # Core module of the project, governing all visible UI and making all database calls relevant to populating, maintaining
 # and updating said UI.
